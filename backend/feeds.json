@@ -1,0 +1,12 @@
+[
+    {
+        "name": "MLB News",
+        "source": "mlb.com",
+        "url": "https://www.mlb.com/feeds/news/rss.xml"
+    },
+    {
+        "name": "CBS Sports MLB",
+        "source": "cbssports.com",
+        "url": "https://www.cbssports.com/rss/headlines/mlb/"
+    }
+]
