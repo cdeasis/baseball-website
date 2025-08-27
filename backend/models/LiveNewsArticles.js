@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const LiveNewsArticleSchema = new mongoose.Schema({
     source: String,
     url: { type: String, index: true, unique: true },
-    canoicalUrl: String,
+    canonicalUrl: String,
     title: String,
     author: String,
     publishedAt: Date,
