@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 
-exports.concanicalize = (url = '') => 
+exports.canonicalize = (url = '') => 
     url.replace(/(\?.*)?$/, '') // strip query params
         .replace(/\/+$/, ''); // strip trailing slashes
 
