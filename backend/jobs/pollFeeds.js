@@ -9,7 +9,7 @@ async function pollOnce() {
     const feeds = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'feeds.json'), 'utf8'));
     for (const feed of feeds) {
         try {
-            const res = await parser.parserUrl(feed.feedUrl);
+            const res = await parser.parseURL(feed.feedUrl);
             for (const item of res.items) {
                 const link = item.link || item.id ||item.guid;
                 if (!link) continue;
@@ -28,9 +28,11 @@ async function pollOnce() {
     }
 }
 
-exports.startPolling = () => {
+function startPolling () {
     const interval = Number(process.env.FEED_POLL_MS || 300000); // default 5 mins
     console.log(`Feed polling every ${interval}s`);
     pollOnce();
     return setInterval(pollOnce, interval);
 }
+
+module.exports = { startPolling, pollOnce };
