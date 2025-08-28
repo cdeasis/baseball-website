@@ -60,10 +60,10 @@ This document explains the backend news ingestion flow, including the roles of w
 ### Next Steps
 1. *Wire routes* for live collection:
     - `routes/news.js`:
-```js
-router.get('/live', liveController.list);
-router.get('/live/:id', liveController.getById);
-```
+    ```js
+    router.get('/live', liveController.list);
+    router.get('/live/:id', liveController.getById);
+    ```
     - Controller methods use `LiveNewsArticle.find()` etc.
 2. *Start polling* from server:
     - Import `{ startPolling }` in `backend/server.js` (or a bootstrap file) and call it once at startup
