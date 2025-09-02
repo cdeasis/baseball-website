@@ -2,11 +2,33 @@
     {
         "name": "MLB News",
         "source": "mlb.com",
-        "url": "https://www.mlb.com/feeds/news/rss.xml"
+        "feedUrl": "https://www.mlb.com/feeds/news/rss.xml",
+        "maxItems": 10
     },
     {
         "name": "CBS Sports MLB",
         "source": "cbssports.com",
-        "url": "https://www.cbssports.com/rss/headlines/mlb/"
+        "feedUrl": "https://www.cbssports.com/rss/headlines/mlb/",
+        "include": ["/mlb/"],
+        "exclude": ["/betting/", "/fantasy/", "/college-football/"],
+        "maxItems": 10
+    },
+    {
+        "name": "AP MLB",
+        "source": "apnews.com",
+        "feedUrl": "https://apnews.com/hub/mlb?output=Atom",
+        "maxItems": 10
+    },
+    {
+        "name": "MLB Trade Rumors",
+        "source": "mlbtraderumors.com",
+        "feedUrl": "https://www.mlbtraderumors.com/feed",
+        "maxItems": 10
+    },
+    {
+        "name": "ESPN MLB",
+        "source": "espn.com",
+        "feedUrl": "https://www.espn.com/espn/rss/mlb/news",
+        "maxItems": 10
     }
 ]

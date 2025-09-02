@@ -14,15 +14,4 @@ app.use(express.json());
 const newsRoutes = require('./routes/news');
 app.use('/api/news', newsRoutes);
 
-// only start poller + listen when NOT running tests
-if (process.env.NODE_ENV !== 'test') {
-    const { startPolling } = require('./jobs/pollFeeds');
-    startPolling();
-
-    const port = process.env.PORT || 5000;
-    app.listen(port, () => {
-        console.log(`Server running on https://localhost:${port}`);
-    });
-}
-
 module.exports = app; // for testing
