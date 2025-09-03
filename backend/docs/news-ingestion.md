@@ -7,7 +7,7 @@
 This document describes and outlines the backend news ingestion flow:
 - **Feed polling** &rarr; **article processing** &rarr; **extraction** &rarr; **summarization** &rarr; **storage**
 - How jobs, models, libraries, and the Python extractor service work together
-- How rollover/bucketing organizes articles into **LIVE / ARCHIVE / COLD ** for frontend use
+- How rollover/bucketing organizes articles into **LIVE / ARCHIVE / COLD** for frontend use
 - Current status and next steps
 
 ## Documentation
