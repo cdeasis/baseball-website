@@ -14,9 +14,9 @@
         "maxItems": 10
     },
     {
-        "name": "AP MLB",
-        "source": "apnews.com",
-        "feedUrl": "https://apnews.com/hub/mlb?output=Atom",
+        "name": "Yahoo Sports",
+        "source": "yahoo.com",
+        "feedUrl": "https://sports.yahoo.com/mlb/rss/",
         "maxItems": 10
     },
     {
