@@ -1,77 +1,91 @@
 # News Injestion Pipeline
 
-**Author:** cdeasis
+**Author:** cdeasis<br>
 **Date:** August 2025
 
 ## Purpose
-This document explains the backend news ingestion flow, including the roles of worker jobs, supporting libraries, models, and the Python extractor service. It also describes the associated test setup, manual scratch utilities, and next steps for wiring this into the application and frontend.
+This document describes and outlines the backend news ingestion flow:
+- **Feed polling** &rarr; **article processing** &rarr; **extraction** &rarr; **summarization** &rarr; **storage**
+- How jobs, models, libraries, and the Python extractor service work together
+- How rollover/bucketing organizes articles into **LIVE / ARCHIVE / COLD ** for frontend use
+- Current status and next steps
 
 ## Documentation
 
-### Backend Files Explanation:
+### Subsystems:
 
-`backend/jobs/pollFeeds.js`:
-- *Reads feed list* from `backend/feeds.json` (have mocked `fs.readFilesSync` in tests)
-- *Poll each RSS feed* with `rss-parser` &rarr; `parseURL(feed.feedUrl)`
-- for each `<item>` in the feed it:
-    - pulls a link and published date
-    - calls `processUrl({ url, source, publishedAt }) from articleWorker.js
-- exported `startPolling()` runs `pollOnce()` immediately and on an interval (configured by `FEED_POLL_MS`), while `pollOnce()` can be called directly (used in test)
+#### 1. **Feed Poller** (`backend/jobs/pollFeeds.js`)
+- Reads `backend/feeds.json` (list of sources)
+- Uses `rss-parser` to fetch items
+- For each `<item>`:
+    - Extracts link + published date
+    - Calls `processUrl({ url, source, publishedAt })`
+- Concurrency controlled by `withGate()` to avoid hammering extractor
+- Supports include/exclude URL filters and per-feed `maxItems`
+- Exports:
+    - `pollOnce()` - single pass (useful for tests)
+    - `startPolling()` - bootstraps inverval loop (default 5 min via `FEED_POLL_MS`)
+#### 2. **Article Worker** (`backend/jobs/articleWorker.js`)
+- **Deduplication**: via `canonicalize(url)`, skips if already in DB
+- **Extraction**:
+    - Calls Python FastAPI extractor (`POST /extract`)
+    - Returns `{ text, title, byline, lead_image, canonical_url }`
+- **Summarization**: baseline extractive summary with `extractiveSummary(text)`
+- **Tagging**: entity tags via `tagEntites(title + text)` (team/player mapping)
+- **Persistence**: inserts into `LiveNewsArticles` with normalized fields
+- Returns `{ ok: True }` or `{ skipped: true, reason }`
+#### 3. **Extractor Service** (`extractor/app.py`)
+- Python FastAPI app wrapping **httpx + trafilatura**
+- Fetches HTML with retries, fallback to `amp/` or `?output=amp` for CBS
+- Extracts clean JSON with `{ text, title, author, images, url }`
+- `/health` endpoint for readiness
+- Run locally with `uvicorn app:app --host 127.0.0.1 --port 8000`
+#### 4. **Schema** (`backend/models/LiveNewsArticles.js`)
+- Single primary collection: **LiveNewsArticles**
+- Fields:
+    - Core: `title`, `url`, `canonicalUrl`, `author`, `publishedAt`, `raw.text`, `summary`, `tags`, `images`
+    - Metadata: `bucket` (`LIVE | ARCHIVE | COLD`), `sourceRank`, `ingestedAt`
+- Indexes:
+    - `(bucket, publishedAt)` for fast filtering
+    - `(source, publishedAt)` for per-source queries
+    - Full-text index on `title + raw.text`
+#### 5. **Rollover / Bucketing**
+- **Old system**: physically moving docs between `NewsArticles`, `ArchiveArticles`, and `ColdArticles`
+- **New system**: single collection, with `bucket` field updated
+    - `LIVE`: today + yesterday
+    - `ARCHIVE`: 2 days &rarr; 1 month
+    - `COLD`: >1 month (only via search)
+#### 6. **Supporting Libraries** (`backend/lib`)
+- `dedupe.js` &rarr; canonicalize URLs, near-duplicate detection
+- `summarize.js` &rarr; baseline summary generator
+- `tags.js` &rarr; entity tagging
+- `teamdefinitions.js` &rarr; MLB-specific mappings
 
-`backend/jobs/articleWorker.js`:
-- *Dedupe*: `canonicalize(url)` &rarr; looks up `LiveNewsArticle.findOne({ canonicalUrl }) - if found, skip
-- *Extract*: calls *Pyton FASTAPI* extractor: `POST ${EXTRACTOR_URL}/extract { url }`
-    - *Extractor* returns `{ text, title, byline, lead_image, canonical_url }` (from `extractor/app.py`)
-- *Summarize*: run `extractiveSummary(text)` (simple TextRank/lead-based baseline)
-- *Tag*: run `tagEntities(title + text) using backend `teamdefinitions` mapping
-- *Persist*: `LiveNewsArticle.create({...})` with normalized fields
-- Returns `{ ok: true, id: ... }` on success or `{ skipped: true, reason: ... }`
+## Current Status (Sept 2025)
+✅ Polling and extraction pipeline stable<br>
+✅ Live ingestion writes correctly into `LiveNewsArticles`<br>
+✅ Feeds working: MLB.com, ESPN, MLBTradeRumors, Yahoo Sports, CBS (AMP fallback)<br>
+⚠️ AP feeds still problematic, may need custom parsing in future<br>
 
-### How these work in conjunction with other elements:
-- *Model*:  `backend/models/LiveNewsArticles.js` is the Mongo schema the worker writes into
-    - UI can read from this later via new endpoints like:
-        - `GET /api/news/live` (list)
-        - `GET /api/news/live/:id` (detail)
-- *Lib Helpers* (`backend/lib`):
-    - `dedupe.js` &rarr; canonical URL + near-dup checks
-    - `summarize.js` &rarr; `extractiveSummary()` used by worker
-    - `tags.js` + `teamdefinitions.js` &rarr; entity tagging (team/players)
-- *Extractor service* (`extractor/app.py`):
-    - fetches article HTML (`httpx`/`trafilatura`), extracts clean text/title/author/image
-    - run with `uvicorn` and set `EXTRACOTR_URL=http://127.0.0.1:8000`
+## Possible Expansions
+- Add more feeds (ex: The Athletic, Fangraphs, team-specific blogs) with tuned include/exclude filters
+- Weighted `sourceRank` for tiebreaks (trusted sources show higher)
+- Deduplication improvements (canoniocalize + near-text similarity)
 
-### Testing
-- `tests/articleWorker.test.js`:
-    - Mocks axios and Mongoose model
-    - Cases:
-        1. *Skips duplicates* when a doc already exists for `canonicalUrl`
-        2. *Skips empty extraction* (no `text` and `title`)
-        3. *Saves* a doc when extraction has content; asserts axios with `/extract/ and `create()` invoked
-- `tests/pollFeeds.test.js`:
-    - Mocks `fs` (so feeds.json is controlled) and `rss-parser` (feed items controlled)
-    - Mocks `articleWorker.processUrl`
-    - Calls `pollOnce()` directly and asserts `processUrl` called twice with two mocked item links
-- `backend/scratch/` (manual smoke tests):
-    - `testLib.js`: runs helpers (summarize/dedupe/tags) with real code
-        - quick sanity check
-    - `testModel.js`: connects to Mongo, creates and deletes a `LiveNewsArticle`
-        - confirms schema/connection
+## Next Steps
 
-### Next Steps
-1. *Wire routes* for live collection:
-    - `routes/news.js`:
-    ```js
-    router.get('/live', liveController.list);
-    router.get('/live/:id', liveController.getById);
-    ```
-    - Controller methods use `LiveNewsArticle.find()` etc.
-2. *Start polling* from server:
-    - Import `{ startPolling }` in `backend/server.js` (or a bootstrap file) and call it once at startup
-    - Enxure `EXTRACTOR_URL` and `FEED_POLL_MS` (optionally) are in `.env`
-3. *Run extractor*:
-    - `cd extractor && python -m venv venv && pip install -r requirements.txt`
-    - `uvicorn app:app --host 127.0.0.1 --port 8000`
-    - Confirm `GET /health` returns `{ ok: true }`
-4. *Update frontend* (when ready):
-    - Point News/Archive UIs to new `/api/news/live` endpoints (or keep current endpoints and add an `"INGEST LIVE"` section)
-    - Keep showing own summaries, headline, and link back to original URL for attribution
+#### **Phase 1 - Schema + Rollover (current branch)**
+- Finalize schema evolution (`bucket`, indexes)
+- Implement rollover script that updates `bucket` values daily
+- Map backend responses to existing frontend article shape
+
+#### **Phase 2- Frontend Integration**
+- Update News page to pull from `/api/news/live`
+- Archive page &rarr; `api/news/archive` (2d-1mo)
+- Search &rarr; query COLD when keywords present
+
+#### **Phase 3 - Summarization System (final phase)**
+- Replace baseline `extractiveSummary()` with ML summarizer
+- Generate richer `short` + `long` summaries
+- Persist model metadata in `summary.model`
+- Ensure attribution via `canonicalUrl` links
