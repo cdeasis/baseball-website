@@ -19,6 +19,7 @@
     "git": "^0.1.5",
     "gray-matter": "^4.0.3",
     "katex": "^0.16.22",
+    "luxon": "^3.7.2",
     "mongoose": "^8.17.0",
     "node-fetch": "^3.3.2",
     "node-schedule": "^2.1.1",
@@ -37,7 +38,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "rollover": "node scripts/rolloverBuckets.js"
   },
   "eslintConfig": {
     "extends": [
