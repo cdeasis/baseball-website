@@ -65,6 +65,8 @@ This document describes and outlines the backend news ingestion flow:
 ✅ Polling and extraction pipeline stable<br>
 ✅ Live ingestion writes correctly into `LiveNewsArticles`<br>
 ✅ Feeds working: MLB.com, ESPN, MLBTradeRumors, Yahoo Sports, CBS (AMP fallback)<br>
+✅ Rollover + bucketing confirmed working (LIVE &rarr; ARCHIVE &rarr; COLD)<br>
+✅ Frontend integration complete (News page, Home highlights, Archive page wired to API)<br>
 ⚠️ AP feeds still problematic, may need custom parsing in future<br>
 
 ## Possible Expansions
@@ -74,17 +76,17 @@ This document describes and outlines the backend news ingestion flow:
 
 ## Next Steps
 
-#### **Phase 1 - Schema + Rollover (current branch)**
+#### **Phase 1 - Schema + Rollover (done)**
 - Finalize schema evolution (`bucket`, indexes)
 - Implement rollover script that updates `bucket` values daily
 - Map backend responses to existing frontend article shape
 
-#### **Phase 2- Frontend Integration**
+#### **Phase 2- Frontend Integration (done)**
 - Update News page to pull from `/api/news/live`
 - Archive page &rarr; `api/news/archive` (2d-1mo)
 - Search &rarr; query COLD when keywords present
 
-#### **Phase 3 - Summarization System (final phase)**
+#### **Phase 3 - Summarization System (final phase, next and current branch)**
 - Replace baseline `extractiveSummary()` with ML summarizer
 - Generate richer `short` + `long` summaries
 - Persist model metadata in `summary.model`
