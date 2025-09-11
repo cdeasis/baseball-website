@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', 'backend', '.env') });
 const mongoose = require('mongoose');
 const { DateTime } = require('luxon');
 const LiveNewsArticle = require('../backend/models/LiveNewsArticles');
@@ -32,6 +33,7 @@ async function updateBuckets({ twoDaysAgo, oneMonthAgo }) {
     );
 }
 
+// optional cap helper
 async function capBucket(bucket, max) {
     const col = mongoose.connection.collection('LiveNewsArticles');
     const toCold = await col.find({ bucket }).sort({ publishedAt: 1, sourceRank: 1, title: 1 }).skip(max).project({ _id: 1 }).toArray(); // oldest first
@@ -42,22 +44,49 @@ async function capBucket(bucket, max) {
         );
     }
 }
-// CLI entry point
-async function main() {
-    await mongoose.connect(process.env.MONGO_URI);
 
-    const cutoffs = computeCutoffs();
-    await updateBuckets(cutoffs);
+/*
+* single rollover pass
+* If 'manageConnection' is true, this function will connect/disconnect Mongo
+* If false, it assumes the process already has a live Mongoose connection
+*/
+async function runRollover({ manageConnection = false } = {}) {
+    try {
+        if (manageConnection) {
+            require('dotenv').config();
+            await mongoose.connect(process.env.MONGO_URI);
+        }
 
-    // optional caps
-    await capBucket('LIVE', 120);
-    await capBucket('ARCHIVE', 3000);
+        const cutoffs = computeCutoffs();
+        await updateBuckets(cutoffs);
 
-    await mongoose.disconnect();
+        // optional caps
+        await capBucket('LIVE', 120);
+        await capBucket('ARCHIVE', 3000);
+
+        if (manageConnection) {
+            await mongoose.disconnect();
+        }
+    } catch (e) {
+        // don't swallow errors; let caller decide how to log/alert
+        if (manageConnection) {
+            try { await mongoose.disconnect(); } catch {}
+        }
+        throw e;
+    }
 }
 
-if (require.main === module){
-    main().catch(async (e) => { console.error(e); await mongoose.disconnect(); });
-}
+module.exports = { computeCutoffs, updateBuckets, runRollover };
 
-module.exports = { computeCutoffs, updateBuckets}
+/* -------------- CLI ENTRY  -------------- */
+if (require.main === module) {
+    runRollover({ manageConnection: true })
+        .then(() => {
+            console.log('[rollover] done');
+            process.exit(0);
+        })
+        .catch((e) => {
+            console.error('[rollover] failed', e);
+            process.exit(1);
+        });
+}

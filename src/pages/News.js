@@ -9,7 +9,7 @@ import axios from 'axios';
 
 export const News = () => {
     const [searchParams] = useSearchParams();
-    const initialID = parseInt(searchParams.get("id"));
+    const initialID = searchParams.get("id");
     const [activeID, setActiveID] = useState(null);
     const [expandedID, setExpandedID] = useState([]);
     const articleRefs = useRef({});
@@ -68,7 +68,7 @@ export const News = () => {
     useEffect(() => {
         const fetchArticles = async () => {
             try{
-                const response = await axios.get('http://localhost:5000/api/news');
+                const response = await axios.get('/api/news');
                 const data = response.data;
                 setArticles(data);
 

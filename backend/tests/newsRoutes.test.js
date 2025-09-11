@@ -103,8 +103,9 @@ describe('news routes (bucketed)', () => {
   });
 
   test('GET /api/news/:id returns mapped detail', async () => {
+    const oid = '507f1f77bc86cd7999439011';
     const doc = {
-      _id: 'abc123',
+      _id: oid,
       title: 'Hello',
       source: 'cbssports.com',
       author: 'Author',
@@ -118,10 +119,10 @@ describe('news routes (bucketed)', () => {
         lean: jest.fn().mockResolvedValue(doc),
     });
 
-    const res = await request(app).get('/api/news/abc123');
+    const res = await request(app).get(`/api/news/${oid}`);
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
-      id: 'abc123',
+      id: oid,
       title: 'Hello',
       source: 'cbssports.com',
       author: 'Author',
@@ -131,7 +132,7 @@ describe('news routes (bucketed)', () => {
       blurb: '',
       url: 'https://example.com',
     });
-    expect(mockModel.findById).toHaveBeenCalledWith('abc123');
+    expect(mockModel.findById).toHaveBeenCalledWith(oid);
   });
 
   test('GET /api/news/:id 404s when not found', async () => {

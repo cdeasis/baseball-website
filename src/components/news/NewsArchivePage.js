@@ -13,8 +13,8 @@ export const NewsArchivePage = () => {
         const fetchArticles = async () => {
             try {
                 const [archiveRes, coldRes] = await Promise.all([
-                    axios.get("/api/news/archive"),
-                    axios.get("/api/news/cold"),
+                    axios.get('/api/news/archive'),
+                    axios.get('/api/news/cold'),
                 ]);
 
                 const archiveArticles = archiveRes.data.map(a => ({ ...a, isArchived: true}));
@@ -86,7 +86,7 @@ export const NewsArchivePage = () => {
                 {filteredArticles.length > 0 ? (
                     <div className="max-w-3xl mx-auto bg-white p-4 rounded shadow space-y-4">
                         {filteredArticles.map((article) => (
-                            <TextOnlyCard key={article._id} article={article} />
+                            <TextOnlyCard key={article.id} article={article} />
                         ))}
                     </div>
                 ) : (

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const LiveNewsArticle = require('../models/LiveNewsArticles');
+const { Types } = require('mongoose');
 
 // GET /api/news -> Today & Yesterday (bucket = LIVE)
 router.get('/', async (req, res) => {
@@ -73,7 +74,12 @@ router.get('/cold', async (req, res) => {
 
 // GET /api/news/:id -> detail
 router.get('/:id', async (req, res) => {
-    const doc = await LiveNewsArticle.findById(req.params.id).lean();
+    const { id } = req.params;
+    if (!Types.ObjectId.isValid(id)) {
+        return res.status(404).json({ error: 'Not Found' });
+    }
+
+    const doc = await LiveNewsArticle.findById(id).lean();
     if (!doc) return res.status(404).json({ error: 'Not Found' });
 
     res.json({
