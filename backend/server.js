@@ -4,8 +4,6 @@ const path = require('path');
 
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
-require('./config/mongodb'); // Ensure MongoDB connection is established
-
 const app = express();
 app.use(cors());
 app.use(express.json());
