@@ -44,7 +44,8 @@
     "rollover": "node scripts/rolloverBuckets.js",
     "backfill:summaries": "node scripts/backfillSummaries.js",
     "backfill:summaries:dry": "node scripts/backfillSummaries.js --dry-run",
-    "backfill:summaries:live": "node scripts/backfillSummaries.js --batchSize=25 --concurrency=2 --bucket=LIVE"
+    "backfill:summaries:live": "node scripts/backfillSummaries.js --batchSize=25 --concurrency=2 --bucket=LIVE",
+    "sandings:snapshot": "node backend/scripts/standingsSnapshot.js"
   },
   "eslintConfig": {
     "extends": [

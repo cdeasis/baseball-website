@@ -1,15 +1,30 @@
-import { expandedStandingsData } from "../../util/expandedStandingsData";
+import { useEffect, useState } from 'react';
+import { getStandings } from '../../api/standings';
 import { leagueLogos } from "../../util/teamDefinitions";
 import { StandingsTable } from "./StandingsTable";
 
-export const DivisionStandingsTable = ({ columns, groupBy }) => {
-    const data = expandedStandingsData(groupBy);
-    console.log("Division data:", data);
-    console.log("Columns:", columns);
+export const DivisionStandingsTable = ({ columns, groupBy, compact = false }) => {
+    const [teams, setTeams] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let done = false;
+        (async () => {
+            try {
+                const { teams } = await getStandings(groupBy);
+                if (!done) setTeams(teams);
+            } finally {
+                if (!done) setLoading(false);
+            }
+        })();
+        return () => { done = true; };
+    }, [groupBy]);
+
+    if (loading) return <div className="text-sm text-gray-500">Loading...</div>;
 
     // group by league and division
     const grouped = {};
-    data.forEach((team) => {
+    teams.forEach((team) => {
         const key = `${team.league}-${team.division}`;
         if (!grouped[key]) grouped[key] = [];
         grouped[key].push(team);
@@ -32,9 +47,9 @@ export const DivisionStandingsTable = ({ columns, groupBy }) => {
                         return (
                             <div key={division} className="mb-8">
                                 <h4 className="text-xl font-bold mb-2 text-gray-800">{division}</h4>
-                                <StandingsTable data={teams} columns={columns} />
+                                <StandingsTable data={teams} columns={columns} compact={compact}/>
                             </div>
-                        )
+                        );
                     })}
                 </div>
             ))}
