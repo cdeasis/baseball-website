@@ -9,6 +9,8 @@ This document describes and outlines the backend news ingestion flow:
 - How jobs, models, libraries, and the Python extractor service work together
 - How rollover/bucketing organizes articles into **LIVE / ARCHIVE / COLD** for frontend use
 
+--- 
+
 ## Documentation
 
 ### Subsystems:
@@ -73,9 +75,14 @@ This document describes and outlines the backend news ingestion flow:
 - `tags.js` &rarr; entity tagging
 - `teamdefinitions.js` &rarr; MLB-specific mappings
 
+---
+
 ## Current Status (Sept 2025)
 ✅ Polling and extraction pipeline stable<br>
 ✅ Summarizer integrated (short + long, ML-backed with fallback) <br>
 ✅ Articles correctly persisted with metadata and bucketed rollover<br>
 ✅ Cron scheduler configured (feeds + rollover twice daily)<br>
-✅ Frontend integration complete (News page, Home highlights, Archive page wired to API)
+✅ Frontend integration complete (News page, Home highlights, Archive page wired to API)<br>
+⚠️ Some feeds (Ap, edge cases) still may need custom parsing
+
+---

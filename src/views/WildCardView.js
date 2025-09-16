@@ -1,13 +1,29 @@
-import { expandedStandingsData } from "../util/expandedStandingsData";
-import { calculatedWildCard } from "../util/calculateStandingsStats";
+import { useEffect, useState } from "react";
+import { getWildCardStandings } from "../api/standings";
 import { leagueLogos } from "../util/teamDefinitions";
 import { WildCardTable } from "../components/standingsTables/WildcardTable";
 
 export const WildCardView = () => {
-    const data = calculatedWildCard(expandedStandingsData());
+    const [teams, setTeams] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const alTeams = data.filter(t => t.league === "AL");
-    const nlTeams = data.filter(t => t.league === "NL");
+    useEffect(() => {
+        let done = false;
+        (async () => {
+            try {
+                const { teams } = await getWildCardStandings();
+                if (!done) setTeams(teams);
+            } finally {
+                if (!done) setLoading(false);
+            }
+        })();
+        return () => { done = true; };
+    }, []);
+
+    if (loading) return <div className="text-sm text-gray-500">Loading...</div>;
+
+    const alTeams = teams.filter(t => t.league === "AL");
+    const nlTeams = teams.filter(t => t.league === "NL");
 
     const columns = ["team", "W", "L", "PCT", "GB", "RS", "RA", "DIFF", "STRK", "L10"];
 

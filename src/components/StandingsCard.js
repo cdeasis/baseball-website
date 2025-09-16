@@ -1,26 +1,32 @@
-import { expandedStandingsData } from "../util/expandedStandingsData";
-import { leagueLogos, teams } from "../util/teamDefinitions";
-
-// group flat array into league/division before rendering
-const groupByLeagueAndDivision = (teams) => {
-    const grouped = {};
-
-    teams.forEach(team => {
-        if (!grouped[team.league]) {
-            grouped[team.league] = {};
-        }
-        if (!grouped[team.league][team.division]) {
-            grouped[team.league][team.division] = [];
-        }
-        grouped[team.league][team.division].push(team);
-    });
-
-    return grouped;
-}
+import { useEffect, useState } from 'react';
+import { getStandings } from '../api/standings'; 
+import { leagueLogos } from "../util/teamDefinitions";
 
 export const StandingsCard = () => {
-    const grouped = groupByLeagueAndDivision(expandedStandingsData("division"));
+    const [grouped, setGrouped] = useState({});
+    const [loading, setLoading] = useState(true);
 
+    useEffect(() => {
+        let done = false;
+        (async () => {
+        try {
+            const { teams } = await getStandings('division');
+            const g = {};
+            teams.forEach(team => {
+            if (!g[team.league]) g[team.league] = {};
+            if (!g[team.league][team.division]) g[team.league][team.division] = [];
+            g[team.league][team.division].push(team);
+            });
+            if (!done) setGrouped(g);
+        } finally {
+            if (!done) setLoading(false);
+        }
+        })();
+        return () => { done = true; };
+    }, []);
+
+    if (loading) return <div className="text-sm text-gray-500">Loading…</div>;
+    
     return (
         <div className="bg-white p-4 rounded shadow">
             <h2 className="text-xl font-bold mb-4">Standings</h2>
