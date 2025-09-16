@@ -29,6 +29,7 @@ __pycache__/
 *.pyd
 
 # Virtual env
+.venv/
 venv/
 .env
 

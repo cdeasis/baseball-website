@@ -3,11 +3,49 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import httpx, trafilatura, json, asyncio
 from urllib.parse import urlparse
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import torch
 
 app = FastAPI()
 
 class ExtractReq(BaseModel):
     url: str
+
+class SummarizeReq(BaseModel):
+    text: str
+    short_tokens: int = 80
+    long_tokens: int = 220
+
+class SummaryResponse(BaseModel):
+    short: str
+    long: str
+    model: str
+
+_SUMMARY_MODEL_ID = "facebook/bart-large-cnn"
+_device = "cuda" if torch.cuda.is_available() else "cpu"
+_tokenizer = AutoTokenizer.from_pretrained(_SUMMARY_MODEL_ID)
+_model = AutoModelForSeq2SeqLM.from_pretrained(_SUMMARY_MODEL_ID).to(_device)
+
+def _generate_summary(text: str, max_new_tokens: int, min_new_tokens: int, num_beams: int = 4, length_penalty: float = 1.0) -> str:
+    # modest chunk guard to avoid token blowups
+    inputs = _tokenizer(
+        text,
+        truncation=True,
+        max_length=1024,
+        return_tensors="pt"
+    ).to(_device)
+
+    with torch.no_grad():
+        out = _model.generate(
+            **inputs,
+            max_new_tokens=max_new_tokens,
+            num_beams=4,
+            length_penalty=1.0,
+            early_stopping=True,
+            no_repeat_ngram_size=3,
+        )
+
+    return _tokenizer.decode(out[0], skip_special_tokens=True).strip()
 
 HEADERS = {
     "User-Agent": (
@@ -171,3 +209,41 @@ async def extract(req: ExtractReq):
         "canonical_url": data.get("url") or req.url,
         "amp_used": used_amp,
     }
+
+@app.post("/summarize", response_model=SummaryResponse)
+async def summarize(req:SummarizeReq):
+    text = (req.text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Empty Text")
+
+    try:
+        # short
+        short = _generate_summary(
+            text,
+            max_new_tokens=req.short_tokens,
+            min_new_tokens=max(30, int(req.short_tokens * 0.6)),
+            num_beams=4,
+            length_penalty=1.0,
+        )
+
+        # long
+        long = _generate_summary(
+            text,
+            max_new_tokens=req.long_tokens,
+            min_new_tokens=max(80, int(req.long_tokens * 0.75)),
+            num_beams=6,
+            length_penalty=1.2,
+        )
+
+        # if long isn't actually longer, try one stretch pass
+        if len(long) <= len(short) + 40:
+            long = _generate_summary(
+                text,
+                max_new_tokens=min(req.long_tokens + 120, 512),
+                min_new_tokens=max(120, int((req.long_tokens + 120) * 0.7)),
+                num_beams=6,
+                length_penalty=1.25,
+            )
+        return SummaryResponse(short=short, long=long, model=_SUMMARY_MODEL_ID)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Summarization failed: {e}")

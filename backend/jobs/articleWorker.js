@@ -3,8 +3,17 @@ const LiveNewsArticle = require('../models/LiveNewsArticles');
 const { extractiveSummary } = require('../lib/summarize');
 const { canonicalize } = require('../lib/dedupe');
 const { tagEntities } = require('../lib/tags');
+const { summarizeOrFallback } = require('../lib/summarizerClient');
 
+// --- CONFIG ---
 const EXTRACTOR_URL = process.env.EXTRACTOR_URL || 'http://127.0.0.1:8000';
+
+// --- HTTP clients ---
+const extractorHttp = axios.create({
+    baseURL: EXTRACTOR_URL,
+    timeout: Number(process.env.EXTRACTOR_TIMEOUT_MS || 15000),
+});
+
 
 exports.processUrl = async ({ url, source, publishedAt }) => {
     url = typeof url === 'string' ? url.trim() : url;
@@ -17,7 +26,7 @@ exports.processUrl = async ({ url, source, publishedAt }) => {
     // call python extractor
     let data;
     try {
-        const res = await axios.post(`${EXTRACTOR_URL}/extract`, { url });
+        const res = await extractorHttp.post('/extract', { url });
         data = res.data;
     } catch (err) {
         const status = err.response?.status;
@@ -35,8 +44,9 @@ exports.processUrl = async ({ url, source, publishedAt }) => {
         return { skipped: true, reason: 'no content' };
     }
     
-    // summarize + tags
-    const sum = extractiveSummary(text);
+    // summarize (ML -> fallback)
+    const { payload: summaryPayload, used, model } = await summarizeOrFallback(text, extractiveSummary);
+
     const tags = tagEntities(`${title} ${text}`);
 
     const doc = await LiveNewsArticle.create({
@@ -46,10 +56,17 @@ exports.processUrl = async ({ url, source, publishedAt }) => {
         title,
         author,
         publishedAt: publishedAt ? new Date(publishedAt) : undefined,
-        raw: { text },
-        summary: {...sum, generatedAt: new Date() },
+        raw: { text, html: data?.html || '' },
+        summary: summaryPayload,
         tags,
-        images: { lead }
+        images: { lead },
+    });
+
+    console.info('[articleWorker] saved', {
+        id: doc._id.toString(),
+        source,
+        usedSummary: used,
+        model,
     });
 
     return { ok: true, id: doc._id.toString() };

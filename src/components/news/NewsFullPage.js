@@ -51,11 +51,34 @@ export const NewsFullPage = () => {
                                 <span> &middot; {new Date(article.publishedDate).toLocaleString()}</span>
                             )}
                         </div>
+                        {article.summaryModel && article.summaryModel !== 'extractive' && (
+                            <span className="inline-block text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                                Summary
+                            </span>
+                        )}
                         {article.image && (
                             <img src={article.image} alt="" className="w-full rounded" />
                         )}
-                        {article.summary && <p className="text-gray-700">{article.summary}</p>}
-                        {article.blurb && <p className="text-gray-700">{article.blurb}</p>}
+                        {/* Intro (short) */}
+                        {(article.summaryShort || article.summary) && (
+                            <p className="text-gray-700">{article.summaryShort || article.summary}</p>
+                        )}
+                        {/* Expanded (long) - only if it adds more than the short*/}
+                        {(() => {
+                            const short = article.summaryShort?.trim() || '';
+                            const long = article.summaryLong?.trim() || '';
+                            const addsMore = long && long !== short;
+                            return addsMore ? (
+                                <p className="text-gray-700 mt-2">{long}</p>
+                            ) : null;
+                        })()}
+                        {article.url && (
+                            <p className="mt-4">
+                                <a className="text-blue-600 hover:underline" href={article.url} target="_blank" rel="noopener noreferrer">
+                                    Read original &#8599;
+                                </a>
+                            </p>
+                        )}
                     </article>
                 )}
             </div>

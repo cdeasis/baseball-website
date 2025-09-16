@@ -3,16 +3,22 @@ const router = express.Router();
 const LiveNewsArticle = require('../models/LiveNewsArticles');
 const { Types } = require('mongoose');
 
+function listProjection() {
+    return {
+        _id: 1, title: 1, author: 1, source: 1, publishedAt: 1, images: 1, summary: 1,
+    };
+}
+
 // GET /api/news -> Today & Yesterday (bucket = LIVE)
 router.get('/', async (req, res) => {
     const limit = Math.min(Number(req.query.limit || 200), 500);
-    const docs = await LiveNewsArticle.find({ bucket: 'LIVE'}).sort({ publishedAt: -1, sourceRank: -1, title: 1}).limit(limit).lean();
+    const docs = await LiveNewsArticle.find({ bucket: 'LIVE'}, listProjection()).sort({ publishedAt: -1, sourceRank: -1, title: 1}).limit(limit).lean();
 
     const out = docs.map(d => ({
         id: d._id.toString(),
         title: d.title,
         image: d.images?.lead || null,
-        summary: d.summary?.short || d.summary?.long || (d.raw?.text || '').slice(0, 260),
+        summary: d.summary?.short || d.summary?.long || '',
         author: d.author || '',
         source: d.source,
         publishedDate: d.publishedAt,
@@ -22,19 +28,18 @@ router.get('/', async (req, res) => {
 
 // GET /api/news/archive -> 2 to 30 days ago (bucket = ARCHIVE)
 router.get('/archive', async (req, res) => {
-    const docs = await LiveNewsArticle.find({ bucket: 'ARCHIVE'}).sort({ publishedAt: -1}).limit(1000).lean();
+    const docs = await LiveNewsArticle.find({ bucket: 'ARCHIVE'}, listProjection()).sort({ publishedAt: -1}).limit(1000).lean();
 
-    const out = docs.map(d => ({
+    res.json(docs.map(d => ({
         id: d._id.toString(),
         title: d.title,
         image: d.images?.lead || null,
-        summary: d.summary?.short || d.summary?.long || (d.raw?.text || '').slice(0, 260),
+        summary: d.summary?.short || d.summary?.long || '',
         author: d.author || '',
         source: d.source,
         publishedDate: d.publishedAt,
         isArchived: true,
-    }));
-    res.json(out);
+    })));
 });
 
 // GET /api/news/cold[?q=...] -> return recent cold if no q; search if q present
@@ -43,13 +48,13 @@ router.get('/cold', async (req, res) => {
 
     if (!q) {
         // return a small recent slice so Archive page can reload + filter
-        const docs = await LiveNewsArticle.find({ bucket: 'COLD'}).sort({ publishedAt: -1}).limit(200).lean();
+        const docs = await LiveNewsArticle.find({ bucket: 'COLD'}, listProjection()).sort({ publishedAt: -1}).limit(200).lean();
 
         return res.json(docs.map( d=> ({
             id: d._id.toString(),
             title: d.title,
             image: d.images?.lead || null,
-            summary: d.summary?.short || d.summary?.long || (d.raw?.text || '').slice(0, 260),
+            summary: d.summary?.short || d.summary?.long || '',
             author: d.author || '',
             source: d.source,
             publishedDate: d.publishedAt,
@@ -58,13 +63,13 @@ router.get('/cold', async (req, res) => {
     }
 
     // text search when q is provided
-    const docs = await LiveNewsArticle.find( { bucket: 'COLD', $text: { $search: q } }, { score: { $meta: 'textScore' } } ).sort({ score: { $meta: 'textScore' }, publishedAt: -1 }).limit(200).lean();
+    const docs = await LiveNewsArticle.find( { bucket: 'COLD', $text: { $search: q } }, { ...listProjection(), score: { $meta: 'textScore' } } ).sort({ score: { $meta: 'textScore' }, publishedAt: -1 }).limit(200).lean();
 
     res.json(docs.map(d => ({
         id: d._id.toString(),
         title: d.title,
         image: d.images?.lead || null,
-        summary: d.summary?.short || d.summary?.long || (d.raw?.text || '').slice(0, 260),
+        summary: d.summary?.short || d.summary?.long || '',
         author: d.author || '',
         source: d.source,
         publishedDate: d.publishedAt,
@@ -90,8 +95,12 @@ router.get('/:id', async (req, res) => {
         publishedDate: doc.publishedAt,
         image: doc.images?.lead || null,
         summary: doc.summary?.long || doc.summary?.short || (doc.raw?.text || ''),
+        summaryShort: doc.summary?.short || '',
+        summaryLong: doc.summary?.long || '',
+        summaryModel: doc.summary?.model || 'extractive',
         blurb: '',
         url: doc.url,
+        canonicalUrl: doc.canonicalUrl || null,
     });
 });
 

@@ -52,7 +52,7 @@ export const NewsArchivePage = () => {
     }, [searchQuery, articles]);
 
     const TextOnlyCard = ({ article }) => (
-        <Link to={`/news/article/${encodeURIComponent(article.id)}`} className="block hover:bg-gray-50 transition p-2">
+        <Link to={`/news/${encodeURIComponent(article.id)}`} className="block hover:bg-gray-50 transition p-2">
             <div className="border-b pb-2">
                 <h3 className="font-semibold text-md">{article.title}</h3>
                 <p className="text-sm text-gray-600">{article.summary}</p>
