@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const LiveNewsArticleSchema = new mongoose.Schema({
     source: String,
     // keep url indexed (fast lookups), but not unique
-    url: { type: String, index: true, unique: true },
+    url: { type: String, index: true },
     // enfore uniqueness on canonicalized version
     canonicalUrl: { type: String, index: true, unique: true},
     title: String,
@@ -37,6 +37,6 @@ LiveNewsArticleSchema.index({ bucket: 1, publishedAt: -1 });
 LiveNewsArticleSchema.index({ source: 1, publishedAt: -1 });
 
 // single text index combining fields
-LiveNewsArticleSchema.index({ title: 'text', 'raw.text': 'text' }); // for search
+LiveNewsArticleSchema.index({ title: 'text', 'raw.text': 'text', 'summary.short': 'text', 'summary.long': 'text' }); // for search
 
 module.exports = mongoose.model('LiveNewsArticle', LiveNewsArticleSchema);

@@ -21,7 +21,7 @@ export const Home = () => {
     useEffect(() => {
         const fetchArticles = async () => {
             try{
-                const response = await axios.get('api/news');
+                const response = await axios.get('/api/news');
                 setArticles(response.data);
             } catch(error) {
                 console.error("Error fetching articles:", error);
@@ -67,7 +67,7 @@ export const Home = () => {
                                     image={article.image}
                                     title={article.title}
                                     summary={article.summary}
-                                    onClick={() => navigate (`/news?id=${article.id}`)}
+                                    onClick={() => navigate (`/news/${article.id}`)}
                                     showButton={false}
                                     variant="home"
                                 />

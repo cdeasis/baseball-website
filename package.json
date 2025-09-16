@@ -20,6 +20,7 @@
     "gray-matter": "^4.0.3",
     "katex": "^0.16.22",
     "luxon": "^3.7.2",
+    "minimist": "^1.2.8",
     "mongoose": "^8.17.0",
     "node-fetch": "^3.3.2",
     "node-schedule": "^2.1.1",
@@ -39,7 +40,11 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "rollover": "node scripts/rolloverBuckets.js"
+    "poll:once": "node -e \"require('./backend/jobs/pollFeeds').pollOnce()\"",
+    "rollover": "node scripts/rolloverBuckets.js",
+    "backfill:summaries": "node scripts/backfillSummaries.js",
+    "backfill:summaries:dry": "node scripts/backfillSummaries.js --dry-run",
+    "backfill:summaries:live": "node scripts/backfillSummaries.js --batchSize=25 --concurrency=2 --bucket=LIVE"
   },
   "eslintConfig": {
     "extends": [

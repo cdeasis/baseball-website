@@ -38,7 +38,7 @@ describe('news routes (bucketed)', () => {
       expect.objectContaining({ id: 'a1', title: 'T1', image: 'img1', author: 'A', source: 'S', publishedDate: expect.any(String) }),
       expect.objectContaining({ id: 'a2', title: 'T2', image: 'img2', author: 'B', source: 'S', publishedDate: expect.any(String) }),
     ]);
-    expect(mockModel.find).toHaveBeenCalledWith({ bucket: 'LIVE' });
+    expect(mockModel.find).toHaveBeenCalledWith({ bucket: 'LIVE' }, expect.any(Object));
     expect(sort).toHaveBeenCalledWith({ publishedAt: -1, sourceRank: -1, title: 1 });
     expect(limit).toHaveBeenCalledWith(200);
   });
@@ -57,7 +57,7 @@ describe('news routes (bucketed)', () => {
       isArchived: true,
       source: 'src',
     }));
-    expect(mockModel.find).toHaveBeenCalledWith({ bucket: 'ARCHIVE' });
+    expect(mockModel.find).toHaveBeenCalledWith({ bucket: 'ARCHIVE' }, expect.any(Object));
     expect(sort).toHaveBeenCalledWith({ publishedAt: -1 });
     expect(limit).toHaveBeenCalledWith(1000);
   });
@@ -76,7 +76,7 @@ describe('news routes (bucketed)', () => {
       isArchived: false,
       source: 'src',
     }));
-    expect(mockModel.find).toHaveBeenCalledWith({ bucket: 'COLD' });
+    expect(mockModel.find).toHaveBeenCalledWith({ bucket: 'COLD' }, expect.any(Object));
     expect(sort).toHaveBeenCalledWith({ publishedAt: -1 });
     expect(limit).toHaveBeenCalledWith(200);
   });
@@ -85,18 +85,16 @@ describe('news routes (bucketed)', () => {
     const dbDocs = [
       { _id: 'c2', title: 'Foo story', images: {}, summary: {}, raw: { text: '...' }, author: '', source: 'src', publishedAt: new Date('2025-06-01') },
     ];
-    // For the search branch we need to mock sort().limit().lean() again
     const lean = jest.fn().mockResolvedValue(dbDocs);
     const limit = jest.fn(() => ({ lean }));
     const sort = jest.fn(() => ({ limit }));
-    // Note: when using $text projection, we pass both filter and projection:
     mockModel.find.mockReturnValue({ sort });
 
     const res = await request(app).get('/api/news/cold?q=foo');
     expect(res.status).toBe(200);
     expect(mockModel.find).toHaveBeenCalledWith(
       { bucket: 'COLD', $text: { $search: 'foo' } },
-      { score: { $meta: 'textScore' } }
+      expect.objectContaining({ score: { $meta: 'textScore' } })
     );
     expect(sort).toHaveBeenCalledWith({ score: { $meta: 'textScore' }, publishedAt: -1 });
     expect(limit).toHaveBeenCalledWith(200);
@@ -111,9 +109,10 @@ describe('news routes (bucketed)', () => {
       author: 'Author',
       publishedAt: new Date('2025-09-03T12:00:00Z'),
       images: { lead: 'lead.jpg' },
-      summary: { long: 'Long summary' },
+      summary: { long: 'Long summary', model: 'facebook/bart-large-cnn' },
       raw: { text: 'Raw text' },
       url: 'https://example.com',
+      canonicalUrl: 'https://example.com/canonical',
     };
     mockModel.findById.mockReturnValue({
         lean: jest.fn().mockResolvedValue(doc),
@@ -129,8 +128,9 @@ describe('news routes (bucketed)', () => {
       publishedDate: doc.publishedAt.toISOString(),
       image: 'lead.jpg',
       summary: 'Long summary',
-      blurb: '',
+      summaryModel: 'facebook/bart-large-cnn',
       url: 'https://example.com',
+      canonicalUrl: 'https://example.com/canonical',
     });
     expect(mockModel.findById).toHaveBeenCalledWith(oid);
   });

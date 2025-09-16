@@ -26,7 +26,7 @@ function App() {
         <Route path="/" element={<Home />}/>
         <Route path="/News" element={<News />}/>
         <Route path="/News/Archive" element={<NewsArchivePage />}/>
-        <Route path="/news/article/:id" element={<NewsFullPage />} />
+        <Route path="/news/:id" element={<NewsFullPage />} />
         <Route path="/Scores" element={<Navigate to={`/scores/${getTodayDate()}`} />}/>
         <Route path="/scores/:date" element={<Scores />} />
         <Route path="/Schedule" element={<Navigate to={`/schedule/${getTodayDate()}`} />}/>

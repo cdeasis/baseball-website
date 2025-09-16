@@ -1,20 +1,18 @@
 import { Header } from '../components/Header';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useEffect, useRef, useState, useCallback } from 'react'; 
 import { MiniNewsCard } from '../components/MiniNewsCard';
 import { NewsCard } from '../components/NewsCard';
-import { NewsCardMain } from '../components/NewsCardMain';
-import { Link } from 'react-router-dom';
 import axios from 'axios';
 
 export const News = () => {
     const [searchParams] = useSearchParams();
     const initialID = searchParams.get("id");
     const [activeID, setActiveID] = useState(null);
-    const [expandedID, setExpandedID] = useState([]);
     const articleRefs = useRef({});
     const miniCardRefs = useRef({});
     const [articles, setArticles] = useState([]);
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (initialID && articleRefs.current[initialID]) {
@@ -133,10 +131,9 @@ export const News = () => {
                                     title={article.title}
                                     summary={article.summary}
                                     showButton={true}
-                                    onClick={() => setExpandedID((prev) => prev.includes(article.id) ? prev : [...prev, article.id])}
+                                    onClick={() => navigate(`/news/${article.id}`)}
                                     variant="news"
                                 />
-                                {expandedID.includes(article.id) && <NewsCardMain article={article} />}
                             </div>
                         ))}
                     </div>
