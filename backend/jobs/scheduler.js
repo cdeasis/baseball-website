@@ -3,7 +3,7 @@ const rollover = require('../../scripts/rolloverBuckets');
 const { pollOnce } = require('./pollFeeds');
 
 const TZ = process.env.CRON_TZ || 'America/New_York';
-const ROLLOVER_CRON = process.env.ROLLOVER_CRON || '5 3 * *' // 03:05 every day
+const ROLLOVER_CRON = process.env.ROLLOVER_CRON || '5 3 * * *' // 03:05 every day
 const FEED_PULL_CRON = process.env.FEED_PULL_CRON || '15 9,17 * * *' // 09:15 & 17:15 every day 
 
 function startScheduler() {
