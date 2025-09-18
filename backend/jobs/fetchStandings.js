@@ -67,11 +67,11 @@ async function fetchFromStatsApi(season = new Date().getFullYear()) {
     });
 
     const today = new Date().toISOString().slice(0, 10);
-    const doc = await StandingsSnapshot.create({
-        season,
-        snapshotDate: today,
-        teams: rows,
-    });
+    const doc = await StandingsSnapshot.findOneAndUpdate(
+        { season, snapshotDate: today },
+        { season, snapshotDate: today, teams: rows, source: 'mlb-statsapi' },
+        { new: true, upsert: true }
+    );
 
     return { id: doc._id.toString(), count: rows.length };
 }

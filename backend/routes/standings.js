@@ -57,11 +57,13 @@ function enrichRow(t) {
 
 // GET /api/standings?groupBy=division|league|overall
 router.get('/', async (req, res) => {
+  res.set('Cache-control', 'no-store');
+
   const groupBy = (req.query.groupBy || 'division').toLowerCase();
 
   const season = new Date().getFullYear();
   const snap = await StandingsSnapshot.findOne({ season })
-    .sort({ snapshotDate: -1 })
+    .sort({ snapshotDate: -1, createdAt: -1, _id: -1 })
     .lean();
 
   if (!snap) return res.status(503).json({ error: 'No standings snapshot yet' });
@@ -81,9 +83,11 @@ router.get('/', async (req, res) => {
 
 // GET /api/standings/wildcard
 router.get('/wildcard', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+
   const season = new Date().getFullYear();
   const snap = await StandingsSnapshot.findOne({ season })
-    .sort({ snapshotDate: -1 })
+    .sort({ snapshotDate: -1, createdAt: -1, _id: -1 })
     .lean();
 
   if (!snap) return res.status(503).json({ error: 'No standings snapshot yet' });

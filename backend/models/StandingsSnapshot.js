@@ -46,7 +46,8 @@ const TeamStandingSchema = new mongoose.Schema({
 
 const StandingsSnapshotSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now, index: true },
-    season: Number,
+    season: { type: Number, required: true, index: true},
+    snapshotDate: { type: String, required: true, index: true},
     source: { type: String, default: 'mlb-statsapi' },
     teams: [TeamStandingSchema],
 });

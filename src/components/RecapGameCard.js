@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { getYesterdayDate } from "../util/dateHelper";
 import { teams } from "../util/teamDefinitions";
-import { getTeamRecord } from "../util/getTeamRecord";
+import { useTeamRecord } from "../hooks/useTeamRecord";
 
 export const RecapGameCard = ({ team1, team2, score, gameID, blurb, pitchers, status }) => {
     const navigate = useNavigate();
@@ -14,8 +14,8 @@ export const RecapGameCard = ({ team1, team2, score, gameID, blurb, pitchers, st
     const team1Data = teams[team1];
     const team2Data = teams[team2];
 
-    const team1Record = getTeamRecord(team1);
-    const team2Record = getTeamRecord(team2);
+    const { record: t1Rec, loading: t1Loading } = useTeamRecord(team1);
+    const { record: t2Rec, loading: t2Loading } = useTeamRecord(team2);
 
     return (
         <div onClick={handleClick} className="border p-3 rounded hover:shadow transition bg-white">
@@ -23,10 +23,10 @@ export const RecapGameCard = ({ team1, team2, score, gameID, blurb, pitchers, st
             <div className="flex items-center justify-between mb-2 text-lg">
                 <div className="flex items-center space-x-1">
                     <img src={team1Data.logo} alt={`${team1} logo`} className="w-5 h-5 object-contain" />
-                    <p className="font-semibold">{team1Data.abbreviation} ({team1Record})</p>
+                    <p className="font-semibold">{team1Data.abbreviation} ({t1Loading ? "..." : t1Rec})</p>
                     <span className="mx-1">@</span>
                     <img src={team2Data.logo} alt={`${team2} logo`} className="w-5 h-5 object-contain" />
-                    <p className="font-semibold">{team2Data.abbreviation} ({team2Record})</p>
+                    <p className="font-semibold">{team2Data.abbreviation} ({t2Loading ? "..." : t2Rec})</p>
                 </div>
                 
                 <div className="text-lg font-semibold">

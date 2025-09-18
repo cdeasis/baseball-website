@@ -1,4 +1,4 @@
-import { getTeamRecord } from '../util/getTeamRecord';
+import { useTeamRecord } from '../hooks/useTeamRecord';
 import { teams } from '../util/teamDefinitions';
 import { Link } from 'react-router-dom';
 import { getTodayDate } from '../util/dateHelper';
@@ -6,8 +6,8 @@ import { getTodayDate } from '../util/dateHelper';
 export const GamesBox = ({ game }) => {
     const away = teams[game.awayTeam];
     const home = teams[game.homeTeam];
-    const awayRecord = getTeamRecord(game.awayTeam);
-    const homeRecord = getTeamRecord(game.homeTeam);
+    const { record: awayRecord, loading: awayLoading } = useTeamRecord(game.awayTeam);
+    const { record: homeRecord, loading: homeLoading } = useTeamRecord(game.homeTeam);
     const isFinal = game.status?.startsWith('F');
     const isLive = game.status === 'LIVE';
     const isPreview = game.status === 'Preview';
@@ -28,11 +28,11 @@ export const GamesBox = ({ game }) => {
 
                     {/* Teams + (Score for live aand final) */}
                     <div className="mb-2">
-                        {[{team: away, record: awayRecord, score: game.score?.away}, {team: home, record: homeRecord, score:game.score?.home}].map((entry, idx) => (
+                        {[{team: away, record: awayRecord, loading: awayLoading, score: game.score?.away}, {team: home, record: homeRecord, loading: homeLoading, score:game.score?.home}].map((entry, idx) => (
                             <div key={idx} className="flex items-center justify-between gap-2 mt-1">
                                 <div className="flex items-center gap-2">
                                     <img src={entry.team.logo} alt={entry.team.nickname[0]} className="w-5 h-5 object contain" />
-                                    <p className="text-lg font-semibold">{entry.team.abbreviation} ({entry.record})</p>
+                                    <p className="text-lg font-semibold">{entry.team.abbreviation} ({entry.loading ? "..." : entry.record})</p>
                                 </div>
                                 {(isLive || isFinal) && (
                                     <span className="text-lg font-bold text-gray-800">{entry.score}</span>
