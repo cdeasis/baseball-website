@@ -6,6 +6,9 @@ export const StandingsCard = () => {
     const [grouped, setGrouped] = useState({});
     const [loading, setLoading] = useState(true);
 
+    const fmtGB = (v) => Number.isFinite(v) ? (v === 0 ? "-" : v.toFixed(1)) : "-";
+    const fmtWCGB = (v) => !Number.isFinite(v) || v === 0 ? "-" : (v < 0 ? `+${Math.abs(v).toFixed(1)}` : v.toFixed(1));
+
     useEffect(() => {
         let done = false;
         (async () => {
@@ -59,6 +62,7 @@ export const StandingsCard = () => {
                                                 <th>L</th>
                                                 <th>PCT</th>
                                                 <th>GB</th>
+                                                <th>WCGB</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -71,7 +75,8 @@ export const StandingsCard = () => {
                                                     <td>{team.W}</td>
                                                     <td>{team.L}</td>
                                                     <td>{team.PCT}</td>
-                                                    <td>{team.GB === 0 ? "-" : team.GB.toFixed(1)}</td>
+                                                    <td>{fmtGB(team.GB)}</td>
+                                                    <td>{fmtWCGB(team.WCGB)}</td>
                                                 </tr>
                                             ))}
                                         </tbody>

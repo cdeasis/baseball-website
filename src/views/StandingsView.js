@@ -5,7 +5,7 @@ import { OverallStandingsTable } from '../components/standingsTables/OverallStan
 
 export const StandingsView = () => {
     // cols
-    const columns = ["team", "W", "L", "PCT", "GB", "RS", "RA", "DIFF", "STRK", "L10"];
+    const columns = ["team", "W", "L", "PCT", "GB", "WCGB", "RS", "RA", "DIFF", "STRK", "L10"];
     const { subtab = "divsion" } = useParams();
 
     if (subtab === "division") return <DivisionStandingsTable columns={columns} groupBy="division"/>;

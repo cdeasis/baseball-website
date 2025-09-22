@@ -5,7 +5,7 @@ import { OverallStandingsTable } from '../components/standingsTables/OverallStan
 
 export const ExpandView = () => {
     // cols
-    const columns = ["team","W","L","PCT","GB","HOME","AWAY","DAY","NIGHT","RHP","LHP","GRASS","TURF","1-RUN","XTRA","EXWL"];
+    const columns = ["team","W","L","PCT","GB","WCGB","HOME","AWAY","DAY","NIGHT","GRASS","TURF","1-RUN","XTRA"];
 
     const { subtab = "divsion" } = useParams();
 

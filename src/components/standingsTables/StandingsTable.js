@@ -1,12 +1,12 @@
 export const StandingsTable = ({ data, columns, compact=false }) => {
-    const dividerAfterCols = new Set (["GB", "DIFF", "AWAY", "NIGHT", "LHP", "XTRA"]);
+    const dividerAfterCols = new Set (["WCGB", "DIFF", "AWAY", "NIGHT", "INTR", "TURF", "LHP"]);
 
     return (
         <div className={compact ? "overflow-x-auto" : ""}>
             <table className={`w-full border-collapse ${compact ? "table-fixed" : ""}`}>
                 {compact && (
                     <colgroup>
-                        <col className="w-[220px]" /> {/* TEAM */}
+                        <col className="w-[200px]" /> {/* TEAM */}
                         {columns.slice(1).map((_, i) => (
                         <col key={i} className="w-[68px]" />
                         ))}
@@ -15,7 +15,7 @@ export const StandingsTable = ({ data, columns, compact=false }) => {
                 <thead>
                     <tr className="border-b border-gray-300">
                         {columns.map((col) => (
-                            <th key={col} className={`text-left ${compact ? "text-xs px-2 py-1 whitespace-nowrap" : "py-2 px-3"}`}>
+                            <th key={col} className={`text-left ${compact ? "text-xs px-2 py-1 whitespace-nowrap" : "py-2 px-2"}`}>
                                 {col.toUpperCase()}
                             </th>
                         ))}
@@ -26,9 +26,20 @@ export const StandingsTable = ({ data, columns, compact=false }) => {
                         <tr key={team.id} className="border-b border-gray-200">
                             {columns.map((col) => {
                                 let value = team[col];
-                                if (col === "GB") {
-                                    value = value === 0 ? "-" : value.toFixed(1);
+                                
+                                if (col === "WCGB") {
+                                    const v = team.WCGB;
+                                    if (!Number.isFinite(v) || v === 0) {
+                                        value = "-";
+                                    } else if (v < 0) {
+                                        value = `+${Math.abs(v).toFixed(1)}`;
+                                    } else {
+                                        value = v.toFixed(1);
+                                    }
+                                } else if (col === "GB") {
+                                    value = Number.isFinite(value) ? (value === 0 ? "-" : value.toFixed(1)) : "-";
                                 }
+
                                 const divider = dividerAfterCols.has(col) ? "border-r border-gray-300" : "";
 
                                 if (col.toLowerCase() === "team") {
@@ -36,7 +47,7 @@ export const StandingsTable = ({ data, columns, compact=false }) => {
                                         <td key={col} className={`py-2 px-3 ${compact ? "text-xs" : ""} whitespace-nowrap`}>
                                             <div className="flex items-center gap-2">
                                                 <img src={team.logo} alt={`${team.name} logo`} className={compact ? "w-4 h-4 object-contain" : "w-5 h-5 object-contain"} />
-                                                <span className={`font-bold ${compact ? "truncate max-w-[140px]" : ""}`}>{team.name}</span>
+                                                <span className={`font-bold ${compact ? "truncate max-w-[120px]" : ""}`}>{team.name}</span>
                                             </div>
                                         </td>
                                     );

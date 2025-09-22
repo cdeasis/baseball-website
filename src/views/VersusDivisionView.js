@@ -5,7 +5,7 @@ import { OverallStandingsTable } from '../components/standingsTables/OverallStan
 
 export const VersusDivisionView = () => {
     // cols
-    const columns = ["team", "W", "L", "PCT", "GB", "EAST", "CENT", "WEST", "INTR"];
+    const columns = ["team", "W", "L", "PCT", "GB", "WCGB", "EAST", "CENT", "WEST", "INTR", "RHP","LHP","EXWL"];
 
     console.log("View Columns:", columns);
     const { subtab = "divsion" } = useParams();

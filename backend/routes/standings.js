@@ -70,14 +70,26 @@ router.get('/', async (req, res) => {
 
   const enriched = (snap.teams || []).map(enrichRow);
 
+  // compute WC GB so it can be mapped to non-WildCard standings pages
+  const wildList = calculatedWildCard(enriched);
+  const wcgbById = Object.create(null);
+  for (const t of wildList) {
+    wcgbById[t.id] = Number.isFinite(t.GB) ? t.GB : null;
+  }
+
   // IMPORTANT: compute GB for the requested grouping so FE gets numeric GB
   const withGB = calculateGamesBack(enriched, groupBy);
+
+  const withGBandWC = withGB.map(t => ({
+    ...t,
+    WCGB: wcgbById[t.id],
+  }));
 
   res.json({
     season: snap.season,
     asOf: snap.snapshotDate,
     groupBy,
-    teams: withGB, // each item includes numeric GB
+    teams: withGBandWC, // each item includes numeric GB
   });
 });
 
